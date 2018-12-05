@@ -1,8 +1,10 @@
 <template>
   <div id="app">
     <div-table
-      :has-showBorder='true'
-      :show-header='false'
+      :has-show-border='true'
+      :has-horizontal-border="true"
+      :show-header='true'
+      :has-vertical-border="true"
       :data="data"
       :columns='columns'></div-table>
   </div>
@@ -44,10 +46,22 @@ export default {
       ],
       data: [
         {
-          date: '这是日期',
-          name: '这是一个名称',
-          product: '这是一个成本',
-          num: '这是一个数量'
+          date: '这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1这是render里的1',
+          name: '这是一个名称1',
+          product: '这是一个成本1',
+          num: '这是一个数量1'
+        },
+        {
+          date: '这是render里的2',
+          name: '这是一个名称2',
+          product: '这是一个成本2',
+          num: '这是一个数量2'
+        },
+        {
+          date: '这是render里的3',
+          name: '这是一个名称3',
+          product: '这是一个成本3',
+          num: '这是一个数量3'
         }
       ]
     }
