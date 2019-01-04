@@ -1,26 +1,49 @@
 <template>
-  <div class="divTable" :class="[divTable, hasBorder]">
+  <div
+    class="divTable"
+    ref="divTable"
+    :class="[divTable, hasBorder]"
+    :style="tableStyle">
+
     <!-- header -->
-    <div class="divTable-thead" @click="tableHeaderClick" @dblclick="tableHeaderDblclick" :style="columnsStyle" v-if="showHeader">
+    <div
+      class="divTable-thead"
+      ref="divTableThead"
+      @click="tableHeaderClick"
+      @dblclick="tableHeaderDblclick"
+      :style="headerStyle"
+      v-if="showHeader">
+
       <div
         class="divTable-thead__th"
-        :class="textAlgin(item)"
+        :class="textAlgin(item, index)"
         :style="divStyle(item)"
         v-for="(item, index) in columns"
         :key="index">
+
         <div class="divTable-thead__tr" v-if="!item.render">
+
           <div class="divTable-table__cell">
+
             <span>{{item.title}}</span>
           </div>
         </div>
         <div class="divTable-table__cell" v-else>
-          <table-thead class="divTable-thead__tr" :render="item.render" />
+
+          <table-thead
+            :column="columns"
+            :index="index"
+            :key="item.title"
+            class="divTable-thead__tr"
+            :render="item.render" />
         </div>
       </div>
     </div>
     <!-- container -->
-    <div class="divTable-main">
+    <div class="divTable-main" ref="divTableMain">
+
       <div class="divTable-main__noData" v-if="!data.length">暂无数据</div>
+
       <template v-else>
         <div
           class="divTable-main__tr"
@@ -29,33 +52,65 @@
           @click="tableTrClick(list, listIndex)"
           @dblclick="tableTrDblclick(list, listIndex)"
           :key="listIndex">
-          <div
-            class="divTable-main__td"
-            :style="divStyle(item)"
-            v-for="(item, itemIndex) in columns"
-            :class="textAlgin(item)"
-            :key="itemIndex">
+
+          <template v-if="typeof list.render !== 'function'">
+
+            <div
+              class="divTable-main__td"
+              :style="divStyle(item)"
+              v-for="(item, itemIndex) in columns"
+              :class="textAlgin(item, itemIndex)"
+              :key="itemIndex">
+
               <div class="divTable-table__cell">
-                <span>{{tdKeyRender(data[listIndex], [item.key])}}</span>
+                <!-- <span v-if="typeof item.key !== 'function'">{{typeof item.key}}{{tdKeyRender(data[listIndex], [item.key])}}</span> -->
+                <span><table-cell
+                  :column="columns"
+                  :index="listIndex"
+                  :key="item.key"
+                  :id="123"
+                  :render="tdKeyRender(data[listIndex], [item.key])" /></span>
               </div>
             </div>
+          </template>
+
+          <!-- tr render渲染 -->
+          <table-thead
+            :render="list.render"
+            :column="columns"
+            :index="listIndex"
+            v-else/>
         </div>
+
       </template>
     </div>
   </div>
 </template>
 
 <script>
-import tableThead from './components/header-render.js'
-import { defaultCoreCipherList } from 'constants';
+import { tableThead, tableCell } from './components/header-render.js'
 export default {
   components: {
-    tableThead
+    tableThead,
+    tableCell
   },
   computed: {
-    columnsStyle () {
+    tableStyle () {
+      let style = {}
+      const type = ['width', 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight']
+      type.map(item => {
+        if (!!this[item] || this[item] === 0) {
+          style[item] = this[item]
+        }
+      })
+      return style
+    },
+    headerStyle () {
       let style = {}
       style.height = this.headerHeight + 'px'
+      this.$nextTick(_ => {
+        this.divTableHMWidth()
+      })
       return style
     },
     divTable () {
@@ -76,6 +131,12 @@ export default {
     }
   },
   methods: {
+    // 变化header和main宽度
+    divTableHMWidth (width) {
+      let Width = width || this.$refs.divTable.scrollWidth
+      // window.innerWidth - 20
+      this.$refs.divTableMain.style.width = this.$refs.divTableThead.style.width = Width + 'px'
+    },
     tableTrClick (list, index) {
       this.$emit('row-click', list, index)
     },
@@ -93,10 +154,15 @@ export default {
       style['background'] = index % 2 === 0 ? this.evenBgColor : this.oddBgColor
       return style
     },
-    textAlgin (key) {
-      if (key.align) {
-        return 'divTable-th__' + key.align
+    textAlgin (item, index) {
+      let Class = ''
+      if (item.align) {
+        Class += 'divTable-th__' + item.align
       }
+      if (this.columnCellClassName) {
+        this.columnCellClassName(item, index)
+      }
+      return Class
     },
     divStyle (item) {
       const type = ['width', 'minWidth', 'maxWidth']
@@ -120,7 +186,13 @@ export default {
       }
     }
   },
+  mounted () {
+    window.onresize = _ => {
+      this.divTableHMWidth()
+    }
+  },
   props: {
+    columnCellClassName: Function,
     data: {
       type: Array,
       default: () => []
@@ -129,6 +201,12 @@ export default {
       type: Boolean,
       default: true
     },
+    width: String,
+    maxWidth: String,
+    minWidth: String,
+    height: String,
+    minHeight: String,
+    maxHeight: String,
     hasHorizontalBorder: {
       type: Boolean,
       default: false
@@ -170,6 +248,7 @@ $themes-font-size: 13px; // 字体大小
 $themes-color: #4b5263; // 主题颜色
 
 .#{$priClass} {
+  overflow: auto;
   *{
     box-sizing: border-box;
   }
@@ -248,7 +327,6 @@ $themes-color: #4b5263; // 主题颜色
     }
     &__tr{
       display:flex;
-      transition: .3s;
       &:hover{
         background: $themes-active-bj-color !important;
       }
